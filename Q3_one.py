@@ -34,7 +34,7 @@ model_name = "Qwen/Qwen2.5-3B-Instruct"
 tokenizer = AutoTokenizer.from_pretrained(model_name)
 model = AutoModelForCausalLM.from_pretrained(model_name, device_map="auto", torch_dtype="auto")
 
-# ✅ Extract Text Functions
+# Extract Text Functions
 def extract_text_from_pdf(pdf_path):
     """Extract text from a PDF file using PyMuPDF (fitz)."""
     text_data = []
@@ -79,7 +79,7 @@ def extract_text_from_csv_or_excel(file_path):
         print(f"Error reading CSV/Excel: {e}")
         return []
 
-# ✅ Convert Text to JSONL
+#  Convert Text to JSONL
 def convert_to_jsonl(file_path, output_jsonl="train_data.jsonl"):
     """Detect file type, extract text, and save as JSONL."""
     file_ext = os.path.splitext(file_path)[1].lower()
@@ -165,7 +165,7 @@ print(dataset)
 
 
 
-# ✅ Tokenization
+#  Tokenization
 def tokenize_function(examples):
     inputs = [q + " " + a for q, a in zip(examples["instruction"], examples["output"])]
     model_inputs = tokenizer(inputs, padding="max_length", truncation=True, max_length=128)
@@ -175,7 +175,7 @@ def tokenize_function(examples):
 dataset = dataset.map(tokenize_function, batched=True)
 train_test_split = dataset["train"].train_test_split(test_size=0.1)
 
-# ✅ LoRA Configuration
+#  LoRA Configuration
 config = LoraConfig(
     r=8,
     lora_alpha=16,
@@ -187,7 +187,7 @@ config = LoraConfig(
 
 model = get_peft_model(model, config)
 
-# ✅ Training Arguments
+#  Training Arguments
 training_args = TrainingArguments(
     output_dir="./fine-tuned-qwen",
     per_device_train_batch_size=2,
@@ -201,7 +201,7 @@ training_args = TrainingArguments(
     optim="adamw_torch"
 )
 
-# ✅ Train Model
+# Train Model
 trainer = Trainer(
     model=model,
     args=training_args,
@@ -212,16 +212,16 @@ trainer.train()
 trainer.save_model()
 torch.cuda.empty_cache()
 
-# ✅ Convert to GGUF
+#  Convert to GGUF
 os.system("python convert-hf-to-gguf.py --model ./fine-tuned-qwen --output fine_tuned_qwen.gguf")
 
-# ✅ Inference Pipeline
+#  Inference Pipeline
 qa_pipeline = pipeline("text-generation", model="./fine-tuned-qwen", tokenizer=tokenizer)
 question = "What is a Transformer model?"
 response = qa_pipeline(question, max_length=200)
 print(response)
 
-# ✅ Evaluation with RAGAS
+#  Evaluation with RAGAS
 from ragas import evaluate
 metrics = evaluate(model="./fine-tuned-qwen", dataset="test_data.json")
 print(metrics)
